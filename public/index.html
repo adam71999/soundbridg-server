@@ -793,7 +793,7 @@
     <div class="watch-folder-list" id="watch-folder-list"></div>
     <div class="add-folder-row">
       <input type="text" id="new-watch-folder" placeholder="Paste folder path here..." />
-      <button class="btn-accent" onclick="addWatchFolder()">Add</button>
+      <button class="btn-accent" id="add-folder-btn">Add</button>
     </div>
   </div>
 
@@ -972,4 +972,20 @@ setInterval(async () => {
 // Load config on init (hook into existing init)
 const _origInit = typeof init === 'function' ? init : null;
 document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('add-folder-btn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      addWatchFolder();
+    });
+  }
+  var input = document.getElementById('new-watch-folder');
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addWatchFolder();
+    });
+  }
+});
 </script>
