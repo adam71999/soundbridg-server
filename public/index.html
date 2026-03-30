@@ -731,6 +731,7 @@
   }
 
   init();
+  loadConfig();
 </script>
 </body>
 </html>
@@ -971,7 +972,7 @@ setInterval(async () => {
 
 // Load config on init (hook into existing init)
 const _origInit = typeof init === 'function' ? init : null;
-document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
+
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
