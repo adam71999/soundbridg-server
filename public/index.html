@@ -12,14 +12,14 @@
       --surface: #111114;
       --surface2: #18181d;
       --border: #222228;
-      --accent: #c8f53a;
+      --accent: #4d9fff;
       --accent-dim: #8aaa1f;
-      --accent-glow: rgba(200,245,58,0.12);
+      --accent-glow: rgba(77,159,255,0.12);
       --text: #e8e8f0;
       --text-muted: #666672;
       --text-dim: #3a3a45;
       --danger: #ff4444;
-      --mp3: #c8f53a;
+      --mp3: #4d9fff;
       --wav: #38d9f5;
       --radius: 6px;
     }
@@ -77,7 +77,7 @@
       height: 7px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
+      box-shadow: 0 0 8px rgba(77,159,255,0.8);
       animation: pulse 2s infinite;
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -792,7 +792,7 @@
     <div class="setting-label">Watch Folders</div>
     <div class="watch-folder-list" id="watch-folder-list"></div>
     <div class="add-folder-row">
-      <input type="text" id="new-watch-folder" placeholder="/Users/you/Music/FL Studio/Exports" />
+      <input type="text" id="new-watch-folder" placeholder="Paste folder path here..." />
       <button class="btn-accent" onclick="addWatchFolder()">Add</button>
     </div>
   </div>
