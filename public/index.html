@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoundBridg</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #111114;
+      --surface2: #18181d;
+      --border: #222228;
+      --accent: #c8f53a;
+      --accent-dim: #8aaa1f;
+      --accent-glow: rgba(200,245,58,0.12);
+      --text: #e8e8f0;
+      --text-muted: #666672;
+      --text-dim: #3a3a45;
+      --danger: #ff4444;
+      --mp3: #c8f53a;
+      --wav: #38d9f5;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,12,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-icon svg { width: 14px; height: 14px; fill: #0a0a0c; }
+    .logo span { color: var(--accent); }
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .app {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 65px);
+    }
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+    .sidebar-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+    .folder-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .folder-btn:hover { background: var(--surface2); color: var(--text); }
+    .folder-btn.active { background: var(--accent-glow); color: var(--accent); }
+    .folder-btn svg { width: 14px; height: 14px; opacity: 0.6; flex-shrink: 0; }
+    .folder-btn.active svg { opacity: 1; }
+    .folder-count { margin-left: auto; font-family: 'Space Mono', monospace; font-size: 10px; opacity: 0.5; }
+    .format-filters { display: flex; flex-direction: column; gap: 4px; }
+    .format-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: var(--radius);
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      text-align: left;
+      width: 100%;
+    }
+    .format-btn:hover { background: var(--surface2); color: var(--text); }
+    .format-btn.active { background: var(--surface2); }
+    .format-pill {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+    }
+    .pill-all { background: var(--surface2); color: var(--text-muted); }
+    .pill-mp3 { background: rgba(200,245,58,0.15); color: var(--mp3); }
+    .pill-wav { background: rgba(56,217,245,0.15); color: var(--wav); }
+    .upload-zone {
+      margin: 0 16px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 20px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-glow); }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--surface2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+    }
+    .upload-icon svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; }
+    .upload-label { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .upload-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); }
+    .upload-folder-select { margin: 12px 16px 0; }
+    .upload-folder-select select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      outline: none;
+    }
+    .new-folder-row { display: flex; gap: 6px; margin: 8px 16px 0; }
+    .new-folder-row input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: var(--radius);
+      outline: none;
+    }
+    .new-folder-row input::placeholder { color: var(--text-dim); }
+    .new-folder-row input:focus { border-color: var(--accent); }
+    .btn-icon {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon svg { width: 13px; height: 13px; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .view-title { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+    .file-count-badge { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); margin-left: 10px; }
+    .file-list { flex: 1; overflow-y: auto; padding: 16px 28px; }
+    .file-list::-webkit-scrollbar { width: 4px; }
+    .file-list::-webkit-scrollbar-track { background: transparent; }
+    .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .file-row:hover { background: var(--surface); border-color: var(--border); }
+    .file-row.playing { background: var(--accent-glow); border-color: rgba(200,245,58,0.3); }
+    .file-format {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .fmt-mp3 { background: rgba(200,245,58,0.12); color: var(--mp3); }
+    .fmt-wav { background: rgba(56,217,245,0.12); color: var(--wav); }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .file-meta { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); }
+    .file-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+    .file-row:hover .file-actions { opacity: 1; }
+    .file-action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .file-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .file-action-btn.del:hover { border-color: var(--danger); color: var(--danger); }
+    .file-action-btn svg { width: 12px; height: 12px; }
+    .play-indicator { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .bars { display: flex; gap: 2px; align-items: flex-end; height: 14px; }
+    .bar { width: 3px; background: var(--accent); border-radius: 2px; animation: equalizer 0.8s ease-in-out infinite alternate; }
+    .bar:nth-child(1) { animation-delay: 0s; }
+    .bar:nth-child(2) { animation-delay: 0.2s; }
+    .bar:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes equalizer { from { height: 3px; } to { height: 14px; } }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-dim); }
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.3; }
+    .empty-state p { font-size: 14px; font-weight: 700; }
+    .empty-state span { font-family: 'Space Mono', monospace; font-size: 11px; }
+    .player-bar {
+      border-top: 1px solid var(--border);
+      padding: 16px 28px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .player-info { min-width: 200px; max-width: 240px; }
+    .player-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-folder { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .player-controls { display: flex; align-items: center; gap: 16px; flex: 1; flex-direction: column; }
+    .player-buttons { display: flex; align-items: center; gap: 12px; }
+    .ctrl-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.15s; padding: 4px; }
+    .ctrl-btn:hover { color: var(--text); }
+    .ctrl-btn svg { width: 18px; height: 18px; }
+    .play-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .play-btn:hover { transform: scale(1.05); box-shadow: 0 0 16px rgba(200,245,58,0.4); }
+    .play-btn svg { width: 16px; height: 16px; fill: #0a0a0c; }
+    .progress-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .time-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); flex-shrink: 0; width: 36px; }
+    .time-label.right { text-align: right; }
+    .progress-track { flex: 1; height: 3px; background: var(--surface2); border-radius: 2px; cursor: pointer; position: relative; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.1s linear; pointer-events: none; }
+    .volume-row { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .volume-row svg { width: 14px; height: 14px; stroke: var(--text-muted); fill: none; flex-shrink: 0; }
+    input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: var(--surface2); border-radius: 2px; outline: none; cursor: pointer; flex: 1; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+    #toast-container { position: fixed; bottom: 100px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+    .toast { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-family: 'Space Mono', monospace; font-size: 11px; display: flex; align-items: center; gap: 8px; animation: slideIn 0.2s ease; max-width: 300px; }
+    .toast.success { border-color: rgba(200,245,58,0.4); }
+    .toast.error { border-color: rgba(255,68,68,0.4); }
+    .toast.warning { border-color: rgba(255,200,50,0.4); }
+    .toast-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .toast.success .toast-dot { background: var(--accent); }
+    .toast.error .toast-dot { background: var(--danger); }
+    .toast.warning .toast-dot { background: #ffc832; }
+    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 300; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 320px; }
+    .modal h3 { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+    .modal select { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; padding: 10px 12px; border-radius: var(--radius); margin-bottom: 16px; outline: none; }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn { padding: 8px 16px; border-radius: var(--radius); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-ghost { background: none; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-primary { background: var(--accent); color: #0a0a0c; }
+    .btn-primary:hover { box-shadow: 0 0 12px rgba(200,245,58,0.3); }
+    .upload-progress { display: none; margin: 8px 16px 0; background: var(--surface2); border-radius: var(--radius); overflow: hidden; height: 3px; }
+    .upload-progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg>
+    </div>
+    Sound<span>Bridg</span>
+  </div>
+  <div class="header-status">
+    <div class="status-dot"></div>
+    <span id="status-text">loading...</span>
+  </div>
+  <button class="settings-btn" id="settings-btn" onclick="document.getElementById('settings-panel').classList.toggle('open')">⚙ Settings</button>
+  </header>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Upload</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" multiple accept=".mp3,.wav" />
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        </div>
+        <div class="upload-label">Drop files here</div>
+        <div class="upload-sub">MP3 · WAV</div>
+      </div>
+      <div class="upload-folder-select">
+        <select id="upload-folder-select">
+          <option value="Uncategorized">Uncategorized</option>
+        </select>
+      </div>
+      <div class="new-folder-row">
+        <input type="text" id="new-folder-input" placeholder="New folder name..." />
+        <button class="btn-icon" id="create-folder-btn" title="Create folder">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-fill" id="upload-progress-fill"></div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Folders</div>
+      <div id="folder-list">
+        <button class="folder-btn active" data-folder="all">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          All Files
+          <span class="folder-count" id="total-count">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Format</div>
+      <div class="format-filters">
+        <button class="format-btn active" data-format="all"><span class="format-pill pill-all">ALL</span>All Formats</button>
+        <button class="format-btn" data-format="mp3"><span class="format-pill pill-mp3">MP3</span>MP3 Files</button>
+        <button class="format-btn" data-format="wav"><span class="format-pill pill-wav">WAV</span>WAV Files</button>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="main-toolbar">
+      <div>
+        <span class="view-title" id="view-title">All Files</span>
+        <span class="file-count-badge" id="file-count"></span>
+      </div>
+    </div>
+    <div class="file-list" id="file-list">
+      <div class="empty-state" id="empty-state">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <p>No tracks yet</p>
+        <span>Drop MP3 or WAV files to get started</span>
+      </div>
+    </div>
+    <div class="player-bar" id="player-bar">
+      <div class="player-info">
+        <div class="player-title" id="player-title">—</div>
+        <div class="player-folder" id="player-folder"></div>
+      </div>
+      <div class="player-controls">
+        <div class="player-buttons">
+          <button class="ctrl-btn" id="prev-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          </button>
+          <button class="play-btn" id="play-btn">
+            <svg id="play-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <button class="ctrl-btn" id="next-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+        </div>
+        <div class="progress-row">
+          <span class="time-label" id="time-current">0:00</span>
+          <div class="progress-track" id="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="time-label right" id="time-total">0:00</span>
+        </div>
+      </div>
+      <div class="volume-row">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" />
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="move-modal">
+  <div class="modal">
+    <h3>Move to Folder</h3>
+    <select id="move-folder-select"></select>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="move-cancel">Cancel</button>
+      <button class="btn btn-primary" id="move-confirm">Move</button>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<audio id="audio-player"></audio>
+<script>
+  let files = [], currentFolder = 'all', currentFormat = 'all';
+  let currentTrackIndex = -1, isPlaying = false, moveTargetHash = null, folders = [];
+  const audio = document.getElementById('audio-player');
+
+  async function init() {
+    await Promise.all([loadStatus(), loadFolders(), loadFiles()]);
+  }
+
+  async function loadStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      document.getElementById('status-text').textContent = data.fileCount + ' tracks · ' + formatSize(data.totalSize);
+    } catch(e) {}
+  }
+
+  async function loadFolders() {
+    try {
+      const res = await fetch('/api/folders');
+      folders = await res.json();
+      renderFolders();
+      populateFolderSelects();
+    } catch(e) {}
+  }
+
+  async function loadFiles() {
+    try {
+      const params = new URLSearchParams();
+      if (currentFolder !== 'all') params.set('folder', currentFolder);
+      if (currentFormat !== 'all') params.set('format', currentFormat);
+      const res = await fetch('/api/files?' + params);
+      files = await res.json();
+      renderFiles();
+    } catch(e) {}
+  }
+
+  function renderFolders() {
+    const list = document.getElementById('folder-list');
+    const allBtn = list.querySelector('[data-folder="all"]');
+    list.innerHTML = '';
+    list.appendChild(allBtn);
+    folders.forEach(folder => {
+      const btn = document.createElement('button');
+      btn.className = 'folder-btn' + (currentFolder === folder ? ' active' : '');
+      btn.dataset.folder = folder;
+      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' + escHtml(folder);
+      btn.addEventListener('click', () => selectFolder(folder));
+      list.appendChild(btn);
+    });
+    document.getElementById('total-count').textContent = files.length || '';
+  }
+
+  function populateFolderSelects() {
+    const allFolders = ['Uncategorized', ...folders.filter(f => f !== 'Uncategorized')];
+    const uploadSel = document.getElementById('upload-folder-select');
+    const moveSel = document.getElementById('move-folder-select');
+    uploadSel.innerHTML = allFolders.map(f => '<option value="' + escHtml(f) + '">' + escHtml(f) + '</option>').join('');
+    moveSel.innerHTML = allFolders.map(f => '<option value="' + escHtml(f) + '">' + escHtml(f) + '</option>').join('');
+  }
+
+  function renderFiles() {
+    const list = document.getElementById('file-list');
+    const empty = document.getElementById('empty-state');
+    const count = document.getElementById('file-count');
+    count.textContent = files.length ? files.length + ' track' + (files.length !== 1 ? 's' : '') : '';
+    if (files.length === 0) { empty.style.display = 'flex'; list.querySelectorAll('.file-row').forEach(r => r.remove()); return; }
+    empty.style.display = 'none';
+    list.querySelectorAll('.file-row').forEach(r => r.remove());
+    files.forEach((file, i) => {
+      const row = document.createElement('div');
+      row.className = 'file-row' + (i === currentTrackIndex ? ' playing' : '');
+      row.dataset.index = i;
+      const isNowPlaying = i === currentTrackIndex && isPlaying;
+      row.innerHTML =
+        '<div class="play-indicator">' + (isNowPlaying ? '<div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>' : '') + '</div>' +
+        '<span class="file-format fmt-' + file.format + '">' + file.format.toUpperCase() + '</span>' +
+        '<div class="file-info"><div class="file-name">' + escHtml(file.name) + '</div><div class="file-meta">' + escHtml(file.folder) + ' · ' + formatSize(file.size) + ' · ' + formatDate(file.uploadedAt) + '</div></div>' +
+        '<div class="file-actions">' +
+        '<button class="file-action-btn move-btn" title="Move" data-hash="' + file.hash + '"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' +
+        '<button class="file-action-btn del delete-btn" title="Delete" data-hash="' + file.hash + '"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' +
+        '</div>';
+      row.addEventListener('click', e => { if (e.target.closest('.file-action-btn')) return; playTrack(i); });
+      row.querySelector('.move-btn').addEventListener('click', e => { e.stopPropagation(); openMoveModal(file.hash); });
+      row.querySelector('.delete-btn').addEventListener('click', e => { e.stopPropagation(); deleteFile(file.hash, file.name); });
+      list.appendChild(row);
+    });
+  }
+
+  function selectFolder(folder) {
+    currentFolder = folder;
+    document.querySelectorAll('.folder-btn').forEach(b => b.classList.toggle('active', b.dataset.folder === folder));
+    document.getElementById('view-title').textContent = folder === 'all' ? 'All Files' : folder;
+    loadFiles();
+  }
+
+  document.querySelectorAll('.format-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentFormat = btn.dataset.format;
+      document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadFiles();
+    });
+  });
+
+  const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); uploadFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', () => uploadFiles(fileInput.files));
+
+  async function uploadFiles(fileList) {
+    if (!fileList.length) return;
+    const folder = document.getElementById('upload-folder-select').value;
+    const progressBar = document.getElementById('upload-progress');
+    const progressFill = document.getElementById('upload-progress-fill');
+    progressBar.style.display = 'block';
+    progressFill.style.width = '30%';
+    const formData = new FormData();
+    formData.append('folder', folder);
+    [...fileList].forEach(f => formData.append('files', f));
+    try {
+      progressFill.style.width = '60%';
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      progressFill.style.width = '100%';
+      let uploaded = 0, duplicates = 0;
+      data.results.forEach(r => { if (r.status === 'uploaded') uploaded++; if (r.status === 'duplicate') duplicates++; });
+      if (uploaded > 0) toast(uploaded + ' track' + (uploaded > 1 ? 's' : '') + ' uploaded', 'success');
+      if (duplicates > 0) toast(duplicates + ' duplicate' + (duplicates > 1 ? 's' : '') + ' skipped', 'warning');
+      fileInput.value = '';
+      await Promise.all([loadFolders(), loadFiles(), loadStatus()]);
+    } catch(e) { toast('Upload failed', 'error'); }
+    finally { setTimeout(() => { progressBar.style.display = 'none'; progressFill.style.width = '0%'; }, 600); }
+  }
+
+  document.getElementById('create-folder-btn').addEventListener('click', () => {
+    const input = document.getElementById('new-folder-input');
+    const name = input.value.trim();
+    if (!name) return;
+    if (!folders.includes(name)) { folders.push(name); renderFolders(); populateFolderSelects(); }
+    document.getElementById('upload-folder-select').value = name;
+    input.value = '';
+    toast('Folder "' + name + '" created', 'success');
+  });
+
+  document.getElementById('new-folder-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('create-folder-btn').click(); });
+
+  function playTrack(index) {
+    if (index < 0 || index >= files.length) return;
+    const track = files[index];
+    currentTrackIndex = index;
+    audio.src = '/api/stream/' + encodeURIComponent(track.folder) + '/' + encodeURIComponent(track.name);
+    audio.volume = parseFloat(document.getElementById('volume').value);
+    audio.play();
+    isPlaying = true;
+    document.getElementById('player-title').textContent = track.name;
+    document.getElementById('player-folder').textContent = track.folder;
+    updatePlayIcon();
+    renderFiles();
+  }
+
+  document.getElementById('play-btn').addEventListener('click', () => {
+    if (currentTrackIndex === -1 && files.length > 0) { playTrack(0); return; }
+    if (isPlaying) { audio.pause(); isPlaying = false; } else { audio.play(); isPlaying = true; }
+    updatePlayIcon(); renderFiles();
+  });
+
+  document.getElementById('prev-btn').addEventListener('click', () => { if (currentTrackIndex > 0) playTrack(currentTrackIndex - 1); });
+  document.getElementById('next-btn').addEventListener('click', () => { if (currentTrackIndex < files.length - 1) playTrack(currentTrackIndex + 1); });
+
+  audio.addEventListener('ended', () => {
+    if (currentTrackIndex < files.length - 1) { playTrack(currentTrackIndex + 1); }
+    else { isPlaying = false; updatePlayIcon(); renderFiles(); }
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (!audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('time-current').textContent = formatTime(audio.currentTime);
+    document.getElementById('time-total').textContent = formatTime(audio.duration);
+  });
+
+  document.getElementById('progress-track').addEventListener('click', e => {
+    if (!audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+  });
+
+  document.getElementById('volume').addEventListener('input', e => { audio.volume = parseFloat(e.target.value); });
+
+  function updatePlayIcon() {
+    document.getElementById('play-icon').innerHTML = isPlaying
+      ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+      : '<polygon points="5 3 19 12 5 21 5 3"/>';
+  }
+
+  async function deleteFile(hash, name) {
+    if (!confirm('Delete "' + name + '"?')) return;
+    try {
+      await fetch('/api/files/' + hash, { method: 'DELETE' });
+      if (files[currentTrackIndex]?.hash === hash) {
+        audio.pause(); isPlaying = false; currentTrackIndex = -1;
+        document.getElementById('player-title').textContent = '—';
+        document.getElementById('player-folder').textContent = '';
+        updatePlayIcon();
+      }
+      toast('"' + name + '" deleted', 'success');
+      await Promise.all([loadFolders(), loadFiles(), loadStatus()]);
+    } catch(e) { toast('Delete failed', 'error'); }
+  }
+
+  function openMoveModal(hash) { moveTargetHash = hash; document.getElementById('move-modal').classList.add('open'); }
+  document.getElementById('move-cancel').addEventListener('click', () => document.getElementById('move-modal').classList.remove('open'));
+  document.getElementById('move-confirm').addEventListener('click', async () => {
+    const folder = document.getElementById('move-folder-select').value;
+    try {
+      await fetch('/api/files/' + moveTargetHash + '/move', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({folder}) });
+      document.getElementById('move-modal').classList.remove('open');
+      toast('Moved to "' + folder + '"', 'success');
+      await Promise.all([loadFolders(), loadFiles()]);
+    } catch(e) { toast('Move failed', 'error'); }
+  });
+
+  document.getElementById('folder-list').addEventListener('click', e => {
+    const btn = e.target.closest('.folder-btn');
+    if (btn) selectFolder(btn.dataset.folder);
+  });
+
+  function toast(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.innerHTML = '<div class="toast-dot"></div>' + escHtml(msg);
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/1048576).toFixed(1) + ' MB';
+  }
+
+  function formatTime(secs) {
+    if (!secs || isNaN(secs)) return '0:00';
+    return Math.floor(secs/60) + ':' + Math.floor(secs%60).toString().padStart(2,'0');
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  init();
+</script>
+</body>
+</html>
+<!-- appended by patch -->
+<style>
+.settings-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:7px 14px;border-radius:var(--radius);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;transition:all 0.15s;}
+.settings-btn:hover{border-color:var(--accent);color:var(--accent);}
+.settings-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transition:right 0.3s ease;padding:28px 24px;display:flex;flex-direction:column;gap:24px;}
+.settings-panel.open{right:0;}
+.settings-header{display:flex;align-items:center;justify-content:space-between;}
+.settings-header h2{font-size:16px;font-weight:800;}
+.close-btn{background:none;border:1px solid var(--border);color:var(--text-muted);width:30px;height:30px;border-radius:var(--radius);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.close-btn:hover{border-color:var(--accent);color:var(--accent);}
+.setting-group{display:flex;flex-direction:column;gap:10px;}
+.setting-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;}
+.setting-row{display:flex;gap:8px;flex-wrap:wrap;}
+.opt-btn{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border);background:none;color:var(--text-muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.opt-btn:hover{border-color:var(--accent);color:var(--accent);}
+.opt-btn.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent);}
+.setting-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:9px 12px;border-radius:var(--radius);outline:none;}
+.setting-input:focus{border-color:var(--accent);}
+.watch-folder-list{display:flex;flex-direction:column;gap:6px;}
+.watch-folder-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:12px;font-family:'Space Mono',monospace;}
+.watch-folder-item button{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0 4px;}
+.watch-folder-item button:hover{color:var(--danger);}
+.add-folder-row{display:flex;gap:8px;}
+.add-folder-row input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:8px 12px;border-radius:var(--radius);outline:none;}
+.add-folder-row input:focus{border-color:var(--accent);}
+.btn-accent{background:var(--accent);color:#0a0a0c;border:none;padding:8px 16px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-accent:hover{box-shadow:0 0 12px rgba(200,245,58,0.3);}
+.btn-full{width:100%;}
+.agent-status-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+.agent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.agent-dot.online{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.agent-dot.offline{background:var(--text-dim);}
+.agent-status-text{font-family:'Space Mono',monospace;font-size:11px;}
+.divider{border:none;border-top:1px solid var(--border);}
+</style>
+
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-header">
+    <h2>⚙ Settings</h2>
+    <button class="close-btn" onclick="document.getElementById('settings-panel').classList.remove('open')">✕</button>
+  </div>
+
+  <!-- Agent status -->
+  <div class="setting-group">
+    <div class="setting-label">Desktop Agent</div>
+    <div class="agent-status-row">
+      <div class="agent-dot offline" id="agent-dot"></div>
+      <div class="agent-status-text" id="agent-status-text">Checking...</div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Watch Folders -->
+  <div class="setting-group">
+    <div class="setting-label">Watch Folders</div>
+    <div class="watch-folder-list" id="watch-folder-list"></div>
+    <div class="add-folder-row">
+      <input type="text" id="new-watch-folder" placeholder="/Users/you/Music/FL Studio/Exports" />
+      <button class="btn-accent" onclick="addWatchFolder()">Add</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Export Trigger -->
+  <div class="setting-group">
+    <div class="setting-label">Export Trigger</div>
+    <div class="setting-row">
+      <button class="opt-btn" data-group="trigger" data-value="on_save" onclick="setSetting('exportTrigger','on_save',this)">On Save</button>
+      <button class="opt-btn" data-group="trigger" data-value="interval" onclick="setSetting('exportTrigger','interval',this)">On Interval</button>
+      <button class="opt-btn" data-group="trigger" data-value="both" onclick="setSetting('exportTrigger','both',this)">Both</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Upload Interval -->
+  <div class="setting-group">
+    <div class="setting-label">Upload Interval</div>
+    <div class="setting-row">
+      <button class="opt-btn" data-group="interval" data-value="manual" onclick="setSetting('intervalMinutes','manual',this)">Manual</button>
+      <button class="opt-btn" data-group="interval" data-value="5" onclick="setSetting('intervalMinutes',5,this)">5 min</button>
+      <button class="opt-btn" data-group="interval" data-value="10" onclick="setSetting('intervalMinutes',10,this)">10 min</button>
+      <button class="opt-btn" data-group="interval" data-value="15" onclick="setSetting('intervalMinutes',15,this)">15 min</button>
+      <button class="opt-btn" data-group="interval" data-value="20" onclick="setSetting('intervalMinutes',20,this)">20 min</button>
+      <button class="opt-btn" data-group="interval" data-value="30" onclick="setSetting('intervalMinutes',30,this)">30 min</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Upload Format -->
+  <div class="setting-group">
+    <div class="setting-label">Upload Format</div>
+    <div class="setting-row">
+      <button class="opt-btn" data-group="format" data-value="mp3" onclick="setSetting('uploadFormat','mp3',this)">MP3</button>
+      <button class="opt-btn" data-group="format" data-value="wav" onclick="setSetting('uploadFormat','wav',this)">WAV</button>
+      <button class="opt-btn" data-group="format" data-value="both" onclick="setSetting('uploadFormat','both',this)">Both</button>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- API Key -->
+  <div class="setting-group">
+    <div class="setting-label">API Key (for desktop agent)</div>
+    <input type="text" class="setting-input" id="api-key-input" placeholder="Set a secret key..." />
+    <button class="btn-accent btn-full" onclick="saveApiKey()">Save API Key</button>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Upload All Now -->
+  <div class="setting-group">
+    <div class="setting-label">Manual Sync</div>
+    <button class="btn-accent btn-full" onclick="uploadAllNow()">⬆ Upload All Files Now</button>
+  </div>
+</div>
+
+<script>
+// ── Settings ──────────────────────────────────────────────────────────────────
+let currentConfig = {};
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    currentConfig = await res.json();
+    applyConfigToUI(currentConfig);
+  } catch(e) {}
+}
+
+function applyConfigToUI(config) {
+  // Watch folders
+  renderWatchFolders(config.watchFolders || []);
+  // Trigger
+  document.querySelectorAll('[data-group="trigger"]').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === config.exportTrigger);
+  });
+  // Interval
+  document.querySelectorAll('[data-group="interval"]').forEach(b => {
+    b.classList.toggle('active', String(b.dataset.value) === String(config.intervalMinutes));
+  });
+  // Format
+  document.querySelectorAll('[data-group="format"]').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === config.uploadFormat);
+  });
+  // API Key
+  if (config.apiKey) document.getElementById('api-key-input').value = config.apiKey;
+  // Agent status
+  updateAgentStatus(config.agentLastSeen);
+}
+
+function updateAgentStatus(lastSeen) {
+  const dot = document.getElementById('agent-dot');
+  const text = document.getElementById('agent-status-text');
+  if (!lastSeen) {
+    dot.className = 'agent-dot offline';
+    text.textContent = 'Agent not connected';
+    return;
+  }
+  const diff = Date.now() - new Date(lastSeen).getTime();
+  const online = diff < 2 * 60 * 1000;
+  dot.className = 'agent-dot ' + (online ? 'online' : 'offline');
+  if (online) {
+    text.textContent = 'Agent online';
+  } else {
+    const mins = Math.floor(diff / 60000);
+    text.textContent = 'Last seen ' + (mins < 60 ? mins + 'm ago' : Math.floor(mins/60) + 'h ago');
+  }
+}
+
+function renderWatchFolders(folders) {
+  const list = document.getElementById('watch-folder-list');
+  if (!folders.length) {
+    list.innerHTML = '<div style="font-family:Space Mono,monospace;font-size:11px;color:var(--text-dim);padding:4px;">No folders added yet</div>';
+    return;
+  }
+  list.innerHTML = folders.map((f, i) =>
+    '<div class="watch-folder-item">' +
+    '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f + '</span>' +
+    '<button onclick="removeWatchFolder(' + i + ')" title="Remove">✕</button>' +
+    '</div>'
+  ).join('');
+}
+
+async function setSetting(key, value, btn) {
+  const group = btn.dataset.group;
+  document.querySelectorAll('[data-group="' + group + '"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentConfig[key] = value;
+  await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ [key]: value }) });
+}
+
+async function addWatchFolder() {
+  const input = document.getElementById('new-watch-folder');
+  const folder = input.value.trim();
+  if (!folder) return;
+  const folders = [...(currentConfig.watchFolders || [])];
+  if (!folders.includes(folder)) folders.push(folder);
+  currentConfig.watchFolders = folders;
+  await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ watchFolders: folders }) });
+  renderWatchFolders(folders);
+  input.value = '';
+  toast('Folder added', 'success');
+}
+
+async function removeWatchFolder(index) {
+  const folders = [...(currentConfig.watchFolders || [])];
+  folders.splice(index, 1);
+  currentConfig.watchFolders = folders;
+  await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ watchFolders: folders }) });
+  renderWatchFolders(folders);
+  toast('Folder removed', 'success');
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ apiKey: key }) });
+  toast('API key saved', 'success');
+}
+
+async function uploadAllNow() {
+  toast('Sync triggered — agent will upload on next check', 'success');
+}
+
+// Poll agent status every 30s
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    updateAgentStatus(data.agentLastSeen);
+  } catch(e) {}
+}, 30000);
+
+// Load config on init (hook into existing init)
+const _origInit = typeof init === 'function' ? init : null;
+document.addEventListener('DOMContentLoaded', () => { loadConfig(); });
+</script>
